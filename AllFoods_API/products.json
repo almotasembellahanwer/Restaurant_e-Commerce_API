@@ -1,0 +1,90 @@
+[
+  {
+    "ProductID": "B2D23180-58B9-458C-9657-0500D0AA6F7C",
+    "ProductName": "Mixed pizza",
+    "Description": "A delicious fusion of meats, veggies, and gooey cheese on a crispy crust. Perfect for every craving in one slice.",
+    "Price": 20,
+    "ImageUrl": "",
+    "CategoryID": "BC566F7D-69F2-40DE-A768-EF37C10A17FC"
+  },
+  {
+    "ProductID": "E3A1409D-4D04-47EA-901F-E40BDF24834A",
+    "ProductName": "Meat Burger",
+    "Description": "Juicy beef patty stacked with cheese, lettuce, tomato, and our signature sauce. Grilled to perfection for burger lovers.",
+    "Price": 15,
+    "ImageUrl": "",
+    "CategoryID": "BC566F7D-69F2-40DE-A768-EF37C10A17FC"
+  },
+  {
+    "ProductID": "86BD7115-A7E2-4045-AEDA-3FB89CA61094",
+    "ProductName": "Seafood Pasta",
+    "Description": "Tender shrimp and calamari tossed in creamy garlic sauce with al dente pasta. A taste of the sea in every bite.",
+    "Price": 30,
+    "ImageUrl": "",
+    "CategoryID": "BC566F7D-69F2-40DE-A768-EF37C10A17FC"
+  },
+  {
+    "ProductID": "A4A04F2A-9BAC-4D5A-85CD-16BEB7691A5F",
+    "ProductName": "Mixed Salad",
+    "Description": "A fresh mix of lettuce, cucumber, tomatoes, olives, and feta. Light, crisp, and full of flavor.",
+    "Price": 35,
+    "ImageUrl": "",
+    "CategoryID": "BC566F7D-69F2-40DE-A768-EF37C10A17FC"
+  },
+  {
+    "ProductID": "21E9C7F9-4B99-42D0-B630-9EBB239E9CD1",
+    "ProductName": "honey pancakes",
+    "Description": "Fluffy pancakes drizzled with golden honey and a sprinkle of powdered sugar. A sweet and cozy treat.",
+    "Price": 40,
+    "ImageUrl": "",
+    "CategoryID": "6B887FDE-9996-4C5C-B22F-F795C24B9062"
+  },
+  {
+    "ProductID": "E9AF3E93-00AF-41B8-AE7E-F1C2FF7822CF",
+    "ProductName": "Caramel cake",
+    "Description": "Moist layers of cake covered in smooth caramel frosting. Rich, buttery, and absolutely irresistible.",
+    "Price": 10,
+    "ImageUrl": "",
+    "CategoryID": "6B887FDE-9996-4C5C-B22F-F795C24B9062"
+  },
+  {
+    "ProductID": "40259A84-7A25-45D2-91EC-2C550E65BD18",
+    "ProductName": "Chocolate cheesecake",
+    "Description": "Creamy chocolate-infused cheesecake on a crunchy base. Decadent, rich, and a chocoholic’s dream.",
+    "Price": 6,
+    "ImageUrl": "",
+    "CategoryID": "6B887FDE-9996-4C5C-B22F-F795C24B9062"
+  },
+  {
+    "ProductID": "64D3BF0B-E617-4765-BB52-BDCCB3689D87",
+    "ProductName": "Soft drinks",
+    "Description": "Chilled, fizzy, and refreshing — available in all your favorite flavors. The classic thirst-quencher.",
+    "Price": 13,
+    "ImageUrl": "",
+    "CategoryID": "3B6F1226-FE16-4D00-A988-274A4A7AAFF4"
+  },
+  {
+    "ProductID": "7E36F007-2EDC-4289-A7AD-2A1EA362F6F9",
+    "ProductName": "Ice Black",
+    "Description": "Bold cold brew coffee served over ice. Smooth, strong, and energizing with every sip.",
+    "Price": 9,
+    "ImageUrl": "",
+    "CategoryID": "3B6F1226-FE16-4D00-A988-274A4A7AAFF4"
+  },
+  {
+    "ProductID": "0AD6AC5F-B588-42FC-BBF7-5259FCE53FA5",
+    "ProductName": "Kids meal 1",
+    "Description": "Mini burger, fries, and a juice box. Fun-sized and full of flavor for little appetites.",
+    "Price": 18,
+    "ImageUrl": "",
+    "CategoryID": "5C0680A3-A30D-46B5-B392-68E35A64BFF9"
+  },
+  {
+    "ProductID": "824291C5-45D0-495E-A594-027A3606439E",
+    "ProductName": "Kids meal 2",
+    "Description": "Chicken nuggets, mashed potatoes, and a chocolate treat. A tasty, balanced meal just for kids.",
+    "Price": 23,
+    "ImageUrl": "",
+    "CategoryID": "5C0680A3-A30D-46B5-B392-68E35A64BFF9"
+  }
+]
