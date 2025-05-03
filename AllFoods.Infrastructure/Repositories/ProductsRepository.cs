@@ -22,9 +22,19 @@ namespace AllFoods.Infrastructure.Repositories
         }
 
 
-        public async Task<List<Product>> GetAllProducts()
+        public async Task<List<Product>> GetAllProducts(int pageNumber,int pageSize)
         {
-            return await _db.Products.Include("Category").ToListAsync();
+            IQueryable<Product> products = _db.Products
+                .Include(temp => temp.Category);
+            if(pageSize > 0)
+            {
+                if(pageSize > 100)
+                {
+                    pageSize = 100;
+                }
+                products = products.Skip(pageSize * (pageNumber - 1)).Take(pageSize);
+            }
+            return await products.ToListAsync();
         }
 
 

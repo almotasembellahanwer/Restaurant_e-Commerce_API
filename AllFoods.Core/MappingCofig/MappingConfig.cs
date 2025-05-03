@@ -5,6 +5,7 @@ using AllFoods.Core.DTO.CartItemDTO;
 using AllFoods.Core.DTO.CategoyDTO;
 using AllFoods.Core.DTO.OrderDTO;
 using AllFoods.Core.DTO.ProductDTO;
+using AllFoods.Core.DTO.UserDTO;
 using AutoMapper;
 using System;
 using System.Collections.Generic;
@@ -47,6 +48,7 @@ namespace AllFoods.Core.MappingCofig
 
             CreateMap<OrderDTO, Order>().ReverseMap();
 
+            CreateMap<UserDTO, ApplicationUser>().ReverseMap();
 
 
 

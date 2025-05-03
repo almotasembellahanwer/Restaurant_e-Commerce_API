@@ -22,6 +22,11 @@ using AllFoods_API.StartupExtensions;
 using Swashbuckle.AspNetCore.SwaggerGen;
 using AllFoods.Core.ServiceContracts.ICartsService;
 using AllFoods.Core.Services.CartsService;
+using AllFoods.Core.ServiceContracts.IOrdersService;
+using AllFoods.Core.Services.OrdersService;
+using AllFoods.Core.ServiceContracts;
+using AllFoods.Core.Services;
+using AllFoods_API.Middleware;
 var builder = WebApplication.CreateBuilder(args);
 
 // Add services to the container.
@@ -32,14 +37,24 @@ builder.Services.AddDbContext<ApplicationDbContext>(options =>
     options.UseSqlServer(connectionString);
 });
 
-
+// Add Redis distributed cache
+builder.Services.AddStackExchangeRedisCache(options =>
+{
+    options.Configuration = builder.Configuration.GetConnectionString("Redis");
+});
 
 //var key = builder.Configuration.GetValue<string>("APISettings:Secret");
 
-builder.Services.AddIdentity<ApplicationUser, IdentityRole>()
-    .AddEntityFrameworkStores<ApplicationDbContext>();
+builder.Services.AddIdentity<ApplicationUser, IdentityRole>(options =>
+{
+    options.Lockout.AllowedForNewUsers = true;
+    options.Lockout.DefaultLockoutTimeSpan = TimeSpan.FromMinutes(5);
+    options.Lockout.MaxFailedAccessAttempts = 5;
+})
+    .AddEntityFrameworkStores<ApplicationDbContext>()
+    .AddDefaultTokenProviders();
 
-
+builder.Services.AddSingleton<ICacheService,RedisCacheService>();
 
 builder.Services.AddScoped<IProductsGetterService, ProductsGetterService>();
 builder.Services.AddScoped<IProductsAdderService, ProductsAdderService>();
@@ -67,6 +82,20 @@ builder.Services.AddScoped<ICartsDeleterService, CartsDeleterService>();
 builder.Services.AddScoped<ICartsRepository, CartsRepository>();
 
 builder.Services.AddScoped<ICartItemsRepository, CartItemsRepository>();
+
+
+builder.Services.AddScoped<IUsersGetterService, UsersGetterService>();
+builder.Services.AddScoped<IUsersDeleterService, UsersDeleterService>();
+builder.Services.AddScoped<IUsersUpdaterService, UsersUpdaterService>();
+builder.Services.AddScoped<IUsersLockerService, UsersLockerService>();
+
+
+builder.Services.AddScoped<IOrdersAdderService, OrdersAdderService>();
+builder.Services.AddScoped<IOrdersGetterService, OrdersGetterService>();
+builder.Services.AddScoped <IOrdersDeleterService, OrdersDeleterService>();
+
+builder.Services.AddScoped<IOrdersRepository, OrdersRepository>();
+
 
 builder.Services.AddTransient<IConfigureOptions<SwaggerGenOptions>, ConfigureSwaggerOptions>();
 builder.Services.AddAutoMapper(typeof(MappingConfig));
@@ -130,7 +159,7 @@ builder.Services.AddSwaggerGen();
 
 
 var app = builder.Build();
-
+//app.UseErrorHandlingMiddleware();
 // Configure the HTTP request pipeline.
 if (app.Environment.IsDevelopment())
 {
@@ -143,7 +172,6 @@ if (app.Environment.IsDevelopment())
     }); // creates swagger UI for testing all API endpoints / action methods
 }
 
-app.UseExceptionHandler("/ErrorHandling/ProccessError");
 app.UseStaticFiles();
 app.UseHttpsRedirection();
 app.UseAuthentication();

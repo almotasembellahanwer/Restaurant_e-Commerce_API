@@ -26,16 +26,16 @@ namespace AllFoods.Core.Services.ProductsService
             _logger = logger;
         }
 
-        public async Task<List<ProductResponse>> GetAllProducts()
+        public async Task<List<ProductResponse>> GetAllProducts(int pageNumber,int pageSize)
         {
-            List<Product> product = await _productsRepository.GetAllProducts();
+            List<Product> product = await _productsRepository.GetAllProducts(pageNumber, pageSize);
             return _mapper.Map<List<ProductResponse>>(product);
         }
 
-        public async Task<List<ProductResponse>> GetFilteredProduct(string searchBy, string? searchString)
+        public async Task<List<ProductResponse>> GetFilteredProduct(string searchBy, string? searchString,int pageNumber,int pageSize)
         {
             if (string.IsNullOrWhiteSpace(searchString))
-                return _mapper.Map<List<ProductResponse>>(await _productsRepository.GetAllProducts());
+                return _mapper.Map<List<ProductResponse>>(await _productsRepository.GetAllProducts(pageNumber,pageSize));
 
             List<Product> products;
             switch (searchBy)
@@ -53,7 +53,7 @@ namespace AllFoods.Core.Services.ProductsService
                     products = await _productsRepository.GetFilteredProduct(p => p.CategoryID.ToString()!.Contains(searchString!));
                     break;
                 default:
-                    products = await _productsRepository.GetAllProducts();
+                    products = await _productsRepository.GetAllProducts(pageNumber, pageSize);
                     break;
             }
             _logger.LogDebug($"SearchBy: {searchBy}, SearchString: {searchString}");

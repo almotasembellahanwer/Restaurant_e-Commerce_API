@@ -73,5 +73,20 @@ namespace AllFoods.Infrastructure.Repositories
         {
             await _db.SaveChangesAsync();
         }
+
+        public async Task<IEnumerable<RefreshToken>> GetAllRefreshTokens(string userID)
+        {
+           IEnumerable<RefreshToken> refreshTokenList = await _db.RefreshTokens
+                .AsNoTracking()
+                .Where(temp=>temp.UserID == userID)
+                .ToListAsync();
+            return refreshTokenList;
+        }
+
+        public async Task RemoveRenge(string userID)
+        {
+           IEnumerable<RefreshToken> refreshTokenList = await GetAllRefreshTokens(userID);
+           _db.RefreshTokens.RemoveRange(refreshTokenList);
+        }
     }
 }

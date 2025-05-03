@@ -22,12 +22,14 @@ namespace AllFoods_API.Controllers.v2
         private readonly APIResponse _response;
         private readonly IMapper _mapper;
 
-        public CategoriesController(ICategoriesGetterService categoriesGetterService, IMapper mapper, ICategoriesAdderService categoriesAdderService)
+        public CategoriesController(ICategoriesGetterService categoriesGetterService, IMapper mapper, ICategoriesAdderService categoriesAdderService, ICategoriesUpdaterService categoriesUpdaterService, ICategoriesDeleterService categoriesDeleterService)
         {
             _categoriesGetterService = categoriesGetterService;
             _response = new APIResponse();
             _mapper = mapper;
             _categoriesAdderService = categoriesAdderService;
+            _categoriesUpdaterService = categoriesUpdaterService;
+            _categoriesDeleterService = categoriesDeleterService;
         }
 
         [HttpGet("GetAll")]

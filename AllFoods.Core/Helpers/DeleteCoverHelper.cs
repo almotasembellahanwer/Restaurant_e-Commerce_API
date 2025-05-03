@@ -17,8 +17,11 @@ namespace AllFoods.Core.Helpers
         }
         public static void DeleteFile(string fileName, string folderName)
         {
-            var cover = Path.Combine(Directory.GetCurrentDirectory(),_imagePath,folderName, fileName);
-            File.Delete(cover);
+            string cover = Path.Combine(Directory.GetCurrentDirectory(),_imagePath,folderName, fileName);
+            if (File.Exists(cover))
+            {
+                File.Delete(cover);
+            }
 
         }
     }

@@ -15,7 +15,7 @@ namespace AllFoods.Core.ServiceContracts.IUsersService
         Task<AccountDTO> Register(RegistrationRequestDTO registerRequestDTO);
         Task<TokenDTO> RefreshAccessToken(TokenDTO tokenDTO);
         Task RevokeRefreshToken (TokenDTO tokenDTO);
-
+        Task CleanUpRefreshTokens(string? email);
 
     }
 }

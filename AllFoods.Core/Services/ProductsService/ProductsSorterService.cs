@@ -12,11 +12,11 @@ namespace AllFoods.Core.Services.ProductsService
 {
     public class ProductsSorterService : IProductsSorterService
     {
-        public List<ProductResponse> GetSortedProducts(List<ProductResponse> allProducts, string sortBy, SortOrderOptions sortOrder)
+        public Task<List<ProductResponse>> GetSortedProducts(List<ProductResponse> allProducts, string sortBy, SortOrderOptions sortOrder)
         {
             if (string.IsNullOrEmpty(sortBy))
             {
-                return allProducts;
+                return Task.FromResult(allProducts);
             }
             // Get type
             Type productResponseType = typeof(ProductResponse);
@@ -24,7 +24,7 @@ namespace AllFoods.Core.Services.ProductsService
             PropertyInfo? sortByProperty = productResponseType.GetProperty(sortBy);
             if (sortByProperty is null)
             {
-                return allProducts;
+                return Task.FromResult(allProducts);
             }
             // Create an empty sorted list
             IOrderedEnumerable<ProductResponse> sortList;
@@ -39,7 +39,7 @@ namespace AllFoods.Core.Services.ProductsService
                 sortList = sortByProperty.GetType() == typeof(string) ? allProducts.OrderByDescending(product => (string?)sortByProperty.GetValue(product), StringComparer.OrdinalIgnoreCase) : allProducts.OrderByDescending(product => sortByProperty.GetValue(product)!.ToString());
             }
 
-            return sortList.ToList();
+            return Task.FromResult(sortList.ToList());
         }
     }
 }

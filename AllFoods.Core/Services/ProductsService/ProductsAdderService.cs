@@ -13,14 +13,11 @@ namespace AllFoods.Core.Services.ProductsService
     {
         private readonly IMapper _mapper;
         private readonly IProductsRepository _productsRepository;
-        //private readonly IHostEnvironment _webHostEnvironment;
-        private readonly string _imagePath;
 
         public ProductsAdderService(IMapper mapper, IProductsRepository productsRepository)
         {
             _productsRepository = productsRepository;
             _mapper = mapper;
-            _imagePath = $"wwwroot{FileSettings.ImagesPath}";
         }
         #region AddProduct
         public async Task<ProductResponse> AddProduct(ProductAddRequest? productAddRequest)

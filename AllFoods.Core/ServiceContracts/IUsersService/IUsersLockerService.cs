@@ -7,17 +7,9 @@ using System.Threading.Tasks;
 
 namespace AllFoods.Core.ServiceContracts.IUsersService
 {
-    public interface IUsersService
+    public interface IUsersLockerService
     {
-        Task<List<UserDTO>> GetAllUsers();
-        Task<UserDTO?> GetUserDetails(string? userID);
-        Task<bool> UpdateUser(string userID, UserDTO userDTO);
-        Task<bool> DeleteUserByEmailAsync(string email);
         Task<bool> LockUser(string email);
         Task<bool> UnlockUser(string email);
-
-
-
-
     }
 }

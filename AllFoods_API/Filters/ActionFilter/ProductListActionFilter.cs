@@ -19,10 +19,10 @@ namespace AllFoods_API.Filters.ActionFilter
 
         public void OnActionExecuting(ActionExecutingContext context)
         {
-            if (context.ActionArguments.ContainsKey("searchBy"))
+            if (context.ActionArguments.TryGetValue("parameters",out var parametersObj)
+                && parametersObj is ProductQueryParameters parameters)
             {
-                string? searchBy = Convert.ToString(context.ActionArguments["searchBy"]);
-                if (!string.IsNullOrEmpty(searchBy))
+                if (parameters.SearchBy is not null)
                 {
                     var productsOptions = new List<string> {
                         nameof(ProductResponse.ProductName),
@@ -32,11 +32,11 @@ namespace AllFoods_API.Filters.ActionFilter
                         nameof(ProductResponse.CategoryID),
                     };
 
-                    if (productsOptions.Any(temp => temp == searchBy) == false)
+                    if (productsOptions.Any(temp => temp == parameters.SearchBy) == false)
                     {
-                        _logger.LogInformation("searchBy acual value: {searchBy}", searchBy);
-                        context.ActionArguments["searchBy"] = nameof(ProductResponse.ProductName);
-                        _logger.LogInformation("searchBy updated value {searchBy}", context.ActionArguments["searchBy"]);
+                        _logger.LogInformation("searchBy acual value: {searchBy}", parameters.SearchBy);
+                        parameters.SearchBy = nameof(ProductResponse.ProductName);
+                        _logger.LogInformation("searchBy updated value {searchBy}", parameters.SearchBy);
                     }
                 }
             }

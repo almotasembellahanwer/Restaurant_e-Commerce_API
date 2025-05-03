@@ -1,6 +1,7 @@
 ﻿using AllFoods.Core.Domain.Entities;
 using AllFoods.Core.DTO.AccountDTO;
 using AllFoods.Core.ServiceContracts.IUsersService;
+using AllFoods_API.Filters.ExceptionFilter;
 using Asp.Versioning;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
@@ -12,21 +13,16 @@ namespace AllFoods_API.Controllers
     [ApiController]
     [ApiVersion("1.0")]
     [ApiVersion("2.0")]
-    public class UsersController : ControllerBase
+    [TypeFilter(typeof(HandleExceptionFilter))]
+    public class AccountController : ControllerBase
     {
         private readonly IAccountService _usersService;
         private readonly APIResponse _response;
 
-        public UsersController(IAccountService usersService)
+        public AccountController(IAccountService usersService)
         {
             _usersService = usersService;
             _response = new();
-        }
-
-        [HttpGet("Error")]
-        public async Task<IActionResult> Error()
-        {
-            throw new FileNotFoundException();
         }
 
         [HttpPost("login")]
@@ -37,6 +33,7 @@ namespace AllFoods_API.Controllers
         {
             try
             {
+                await _usersService.CleanUpRefreshTokens(loginRequestDTO.Email);
                 // use Login Service
                 TokenDTO tokenDTO = await _usersService.Login(loginRequestDTO);
                 // If tokenDTO is null or token is null or empty return bad request
@@ -44,7 +41,7 @@ namespace AllFoods_API.Controllers
                 {
                     _response.StatusCode = HttpStatusCode.BadRequest;
                     _response.IsSuccess = false;
-                    _response.ErrorMessages.Add("UserName or password is incorrect");
+                    _response.ErrorMessages.Add("Email or password is incorrect");
                     return BadRequest(_response);
                 }
                 _response.StatusCode = HttpStatusCode.OK;
@@ -68,22 +65,22 @@ namespace AllFoods_API.Controllers
             try
             {
                 // Chech if user is unique or not
-                bool userNameExist = await _usersService.IsUniqueUser(registerRequestDTO.UserName);
+                bool userNameExist = await _usersService.IsUniqueUser(registerRequestDTO.Email);
                 if (userNameExist == false)
                 {
                     _response.StatusCode = HttpStatusCode.BadRequest;
                     _response.IsSuccess = false;
-                    _response.ErrorMessages.Add("Username already exist");
+                    _response.ErrorMessages.Add("Email already exist");
                     return BadRequest(_response);
                 }
                 // use Register Service
                 AccountDTO user = await _usersService.Register(registerRequestDTO);
                 // If user is null return bad request
-                if (user is null)
+                if (user is null || user.ErrorMassages is not null)
                 {
                     _response.StatusCode = HttpStatusCode.BadRequest;
                     _response.IsSuccess = false;
-                    _response.ErrorMessages.Add("Error while registration");
+                    _response.ErrorMessages.Add(user!.ErrorMassages.First() ?? "error while registration");
                     return BadRequest(_response);
                 }
                 _response.StatusCode = HttpStatusCode.OK;
@@ -93,7 +90,7 @@ namespace AllFoods_API.Controllers
             catch (Exception ex)
             {
                 _response.IsSuccess = false;
-                _response.ErrorMessages = new List<string>() { ex.ToString() };
+                _response.ErrorMessages = new List<string>() { ex.Message };
             }
 
 

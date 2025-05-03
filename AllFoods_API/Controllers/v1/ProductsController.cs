@@ -37,13 +37,13 @@ namespace AllFoods_API.Controllers.v1
         #region GetAllProducts
         [HttpGet]
         [ProducesResponseType(StatusCodes.Status200OK)]
-        public async Task<ActionResult<APIResponse>> GetAllProducts(string searchBy, string? searchString, string sortBy = nameof(ProductResponse.ProductName), SortOrderOptions sortOrder = SortOrderOptions.ASC)
+        public async Task<ActionResult<APIResponse>> GetAllProducts(string searchBy, string? searchString, string sortBy = nameof(ProductResponse.ProductName), SortOrderOptions sortOrder = SortOrderOptions.ASC,int pageNumber = 1,int pageSize = 10)
         {
             try
             {
-                List<ProductResponse> products = await _productsGetterService.GetFilteredProduct(searchBy, searchString);
+                List<ProductResponse> products = await _productsGetterService.GetFilteredProduct(searchBy, searchString,pageNumber,pageSize);
 
-                List<ProductResponse> sortedProducts = _productsSorterService.GetSortedProducts(products, sortBy, sortOrder);
+                List<ProductResponse> sortedProducts = await _productsSorterService.GetSortedProducts(products, sortBy, sortOrder);
                 _response.StatusCode = HttpStatusCode.OK;
                 _response.Result = sortedProducts;
                 return Ok(_response);

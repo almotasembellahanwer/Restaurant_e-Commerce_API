@@ -15,10 +15,12 @@ namespace AllFoods.Core.Domain.RepositoryContracts
         /// <returns>Returns product that has been added</returns>
         Task<Product> AddProduct(Product product);
         /// <summary>
-        /// Get all products
+        /// Get all products from database based on page number and page size
         /// </summary>
-        /// <returns>Returns a list of products</returns>
-        Task<List<Product>> GetAllProducts();
+        /// <param name="pageNumber">pageNumber to start with</param>
+        /// <param name="pageSize">pageSize to take</param>
+        /// <returns>Returns all products based on page number and page size</returns>
+        Task<List<Product>> GetAllProducts(int pageNumber, int pageSize);
         /// <summary>
         /// Get product based on the productID
         /// </summary>

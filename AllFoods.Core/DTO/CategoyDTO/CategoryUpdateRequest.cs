@@ -14,7 +14,7 @@ namespace AllFoods.Core.DTO.CategoyDTO
 
         public Category ToCategory()
         {
-            return new Category { CategoryName = CategoryName };
+            return new Category { CategoryID = CategoryID, CategoryName = CategoryName };
         }
     }
 }

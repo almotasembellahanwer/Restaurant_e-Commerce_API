@@ -46,7 +46,7 @@ namespace AllFoods.ServiceTests
             _productsGetterService = new ProductsGetterService(_mapper, _productsRepository!, loggerMock.Object);
             _productsUpdaterService = new ProductsUpdaterService(_mapper, _productsRepository!);
             _productsDeleterService = new ProductsDeleterService(_mapper, _productsRepository!);
-
+            _productsSorterService = new ProductsSorterService();
         }
 
         #region AddProduct

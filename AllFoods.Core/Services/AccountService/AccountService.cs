@@ -10,6 +10,10 @@ using System.Security.Claims;
 using AutoMapper;
 using AllFoods.Core.Domain.Entities;
 using AllFoods.Core.DTO.AccountDTO;
+using AllFoods.Core.Exceptions;
+using AllFoods.Core.Settinges.NewFolder;
+using Microsoft.Extensions.Logging;
+using System.Linq;
 //using Microsoft.IdentityModel.JsonWebTokens;
 namespace AllFoods.Core.Services.UsersService
 {
@@ -19,18 +23,22 @@ namespace AllFoods.Core.Services.UsersService
         private readonly IAccountRepository _usersRepository;
         private readonly UserManager<ApplicationUser> _userManager;
         private readonly RoleManager<IdentityRole> _roleManager;
+        private readonly ILogger<AccountService> _logger;
 
         private readonly IMapper _mapper;
         private string secretKey;
 
-        public AccountService(IAccountRepository usersRepository, UserManager<ApplicationUser> userManager, IConfiguration configuration, IMapper mapper, RoleManager<IdentityRole> roleManager)
+        public AccountService(IAccountRepository usersRepository, UserManager<ApplicationUser> userManager, IConfiguration configuration, IMapper mapper, RoleManager<IdentityRole> roleManager, ILogger<AccountService> logger)
         {
             _usersRepository = usersRepository;
             _userManager = userManager;
             secretKey = configuration.GetSection("APISettings:Secret").ToString()!;
             _mapper = mapper;
             _roleManager = roleManager;
+            _logger = logger;
         }
+
+
 
         public async Task<bool> IsUniqueUser(string userName)
         {
@@ -39,14 +47,12 @@ namespace AllFoods.Core.Services.UsersService
 
         public async Task<TokenDTO> Login(LoginRequestDTO loginRequestDTO)
         {
-            // retrieve the user from repository based on userName
-            var user = await _usersRepository.GetUser(u=>u.UserName!.ToLower() == loginRequestDTO.UserName.ToLower());
-            // check if the user is valid or not based on user
-            // that is retrieved from database and Password that user entered
-            bool isValid = await _userManager.CheckPasswordAsync(user, loginRequestDTO.Password);
+            // retrieve the user from repository based on email
+            var user = await _usersRepository.GetUser(u=>u.Email!.ToLower() == loginRequestDTO.Email.ToLower());
+
 
             // chech if user is null or isValid = false
-            if(user is null || isValid == false)
+            if(user is null)
             {
                 return new TokenDTO() {
                     AccessToken = "",
@@ -55,6 +61,33 @@ namespace AllFoods.Core.Services.UsersService
 
             }
 
+            // Check if user is locked out
+            if (await _userManager.IsLockedOutAsync(user))
+            {
+                return new TokenDTO()
+                {
+                    AccessToken = "",
+                    RefreshToken = "",
+                    IsLockedOut = true
+                };
+            }
+
+            // check if the user is valid or not based on user
+            // that is retrieved from database and Password that user entered
+            bool isValid = await _userManager.CheckPasswordAsync(user, loginRequestDTO.Password);
+
+            if (!isValid)
+            {
+                // Increment failed access count
+                await _userManager.AccessFailedAsync(user);
+                return new TokenDTO()
+                {
+                    AccessToken = "",
+                    RefreshToken = ""
+                };
+            }
+            // Reset failed token on successful login
+            await _userManager.ResetAccessFailedCountAsync(user);
 
             // if user was found generate JWT token
             var jwtTokenID = $"JIT{Guid.NewGuid()}";
@@ -77,7 +110,12 @@ namespace AllFoods.Core.Services.UsersService
             var existingRefreshToken = await _usersRepository.GetRefreshToken(temp=>temp.Refresh_Token == tokenDTO.RefreshToken);
             if (existingRefreshToken == null)
                 return new TokenDTO();
-
+            var user = await _usersRepository.GetUser(temp => temp.Id == existingRefreshToken.UserID);
+            // Check if user is locked out
+            if (user is not null && await _userManager.IsLockedOutAsync(user))
+            {
+                return new TokenDTO() { IsLockedOut = true };
+            }
             // Compare data from existing refresh token that comes from database
             // and access token provided from tokenDTO and check if has any mismatch
             var isTokenValid = GetAccessTokenData(tokenDTO.AccessToken, existingRefreshToken.UserID,existingRefreshToken.JwtTokenID);
@@ -125,14 +163,14 @@ namespace AllFoods.Core.Services.UsersService
 
         public async Task<AccountDTO> Register(RegistrationRequestDTO registerRequestDTO)
         {
-            // Convert RegistrationRequestDTO to
-            // ApplicationUser and store all information to database
+            var response = new AccountDTO();
+
             var user = new ApplicationUser()
             {
-                UserName = registerRequestDTO.UserName,
+                UserName = registerRequestDTO.Email,
                 Name = registerRequestDTO.Name,
-                Email = registerRequestDTO.UserName,
-                NormalizedEmail = registerRequestDTO.UserName.ToUpper(),
+                Email = registerRequestDTO.Email,
+                NormalizedEmail = registerRequestDTO.Email.ToUpper(),
                 StreetAddress= registerRequestDTO.StreetAddress,
                 City = registerRequestDTO.City,
                 State = registerRequestDTO.State,
@@ -143,30 +181,41 @@ namespace AllFoods.Core.Services.UsersService
             // Use try-catch block to handle registers
             try
             {
+                if(registerRequestDTO.Role != RoleSettings.Customer_Role)
+                {
+                    throw new BadRequestException("Invaid role");
+                }
                 // Create a user by using userManager
                 var userCreated = await _userManager.CreateAsync(user, registerRequestDTO.Password);
-                // If creation succeded add a role to a user that is in userManager
                 if (userCreated.Succeeded)
                 {
-                    // If role exist in role table in database
-                    if(!await _roleManager.RoleExistsAsync(registerRequestDTO.Role))
+                    // Create a customer role if it doesn't exist
+                    if (!await _roleManager.RoleExistsAsync(RoleSettings.Customer_Role))
                     {
-                        await _roleManager.CreateAsync(new IdentityRole(registerRequestDTO.Role));
+                        await _roleManager.CreateAsync(new IdentityRole(RoleSettings.Customer_Role));
+                        await _roleManager.CreateAsync(new IdentityRole(RoleSettings.Admin_Role));
                     }
-                    // Assign the user to the specified role and add userId, roleId to AspNetUserRoles table
-                    await _userManager.AddToRoleAsync(user, registerRequestDTO.Role);
-                    // retrieve user from database
-                    var userToReturn = await _usersRepository.GetUser(u=>u.UserName == registerRequestDTO.UserName);
-                    //  Map ApplicationUser to UserDTO and return it
+                    
+
+                        await _userManager.AddToRoleAsync(user, RoleSettings.Customer_Role);
+                    
+
+                    var userToReturn = await _usersRepository.GetUser(u=>u.Email == registerRequestDTO.Email);
                     return _mapper.Map<AccountDTO>(userToReturn);
+                }
+                else
+                {
+                    response.ErrorMassages = userCreated.Errors
+                        .Select(temp => temp.Description).ToList();
+                    return response;
                 }
             }
             catch (Exception ex)
             {
-                
+                _logger.LogError("error occured {exception}", ex);
+                response.ErrorMassages = new List<string>() { ex.Message };
+                return response;
             }
-            // If something not valid
-            return new AccountDTO();
         }
         public async Task RevokeRefreshToken(TokenDTO tokenDTO)
         {
@@ -186,6 +235,23 @@ namespace AllFoods.Core.Services.UsersService
             await _usersRepository.MarkAllTokenInChainAsInvalid(existingRefreshToken.UserID, existingRefreshToken.JwtTokenID);
 
         }
+        public async Task CleanUpRefreshTokens(string? email)
+        {
+            if (email is null)
+                throw new BadRequestException("write a valid email");
+            var user = await _userManager.FindByEmailAsync(email);
+            if (user is null)
+                throw new NotFoundException("user not found");
+            var oldrefreshTokens = await _usersRepository.GetAllRefreshTokens(user.Id);
+            if (oldrefreshTokens.Any())
+            {
+                await _usersRepository.RemoveRenge(user.Id);
+                await _usersRepository.Save();
+            }
+
+        }
+
+        #region Helper Methods
         /// <summary>
         /// Get JWT token 
         /// </summary>
@@ -238,7 +304,7 @@ namespace AllFoods.Core.Services.UsersService
                 // Read the token claims and values
                 var jwt = tokenHandler.ReadJwtToken(accessToken);
                 // Get jwt token id value from claims 
-                var jwtTokenID = jwt.Claims.FirstOrDefault(temp=>temp.Type == JwtRegisteredClaimNames.Jti)!.Value;
+                var jwtTokenID = jwt.Claims.FirstOrDefault(temp => temp.Type == JwtRegisteredClaimNames.Jti)!.Value;
                 // Get user id value from claims 
                 var userID = jwt.Claims.FirstOrDefault(temp => temp.Type == JwtRegisteredClaimNames.Sub)!.Value;
 
@@ -257,5 +323,7 @@ namespace AllFoods.Core.Services.UsersService
             refreshToken.IsValid = false;
             await _usersRepository.Save();
         }
+        #endregion
+
     }
 }

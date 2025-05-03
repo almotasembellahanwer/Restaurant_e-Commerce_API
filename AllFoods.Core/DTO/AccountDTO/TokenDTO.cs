@@ -10,6 +10,7 @@ namespace AllFoods.Core.DTO.AccountDTO
     {
         public string AccessToken { get; set; } = string.Empty;
         public string RefreshToken { get; set; } = string.Empty;
+        public bool IsLockedOut { get; set; } = false;
 
     }
 }

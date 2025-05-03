@@ -1,13 +1,19 @@
 ﻿using AllFoods.Core.Domain.Entities;
 using AllFoods.Core.DTO.ProductDTO;
 using AllFoods.Core.Enums;
+using AllFoods.Core.Exceptions;
+using AllFoods.Core.ServiceContracts;
 using AllFoods.Core.ServiceContracts.IProductsService;
+using AllFoods.Core.Settinges;
 using AllFoods_API.Filters.ActionFilter;
+using AllFoods_API.Filters.ExceptionFilter;
 using Asp.Versioning;
 using AutoMapper;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.Extensions.Caching.Distributed;
 using System.Net;
+using System.Text.Json;
 namespace AllFoods_API.Controllers.v2
 {
     [Route("api/v{version:apiVersion}/[controller]")]
@@ -21,11 +27,11 @@ namespace AllFoods_API.Controllers.v2
         private readonly IProductsSorterService _productsSorterService;
         private readonly IProductsUpdaterService _productsUpdaterService;
         private readonly IProductsDeleterService _productsDeleterService;
-
+        private ICacheService _cache;
         private readonly IMapper _mapper;
         private readonly APIResponse _response;
 
-        public ProductsController(IProductsGetterService productsGetterService, IProductsSorterService productsSorterService, IProductsAdderService productsAdderService, IMapper mapper, IProductsDeleterService productsDeleterService, IProductsUpdaterService productsUpdaterService)
+        public ProductsController(IProductsGetterService productsGetterService, IProductsSorterService productsSorterService, IProductsAdderService productsAdderService, IMapper mapper, IProductsDeleterService productsDeleterService, IProductsUpdaterService productsUpdaterService, IDistributedCache distributedCache, ICacheService cache)
         {
             _productsGetterService = productsGetterService;
             _productsSorterService = productsSorterService;
@@ -34,18 +40,21 @@ namespace AllFoods_API.Controllers.v2
             _mapper = mapper;
             _productsDeleterService = productsDeleterService;
             _productsUpdaterService = productsUpdaterService;
+            _cache = cache;
         }
         #region GetAllProducts
         [HttpGet]
         [ProducesResponseType(StatusCodes.Status200OK)]
         [TypeFilter(typeof(ProductListActionFilter))]
-        public async Task<ActionResult<APIResponse>> GetAllProducts(string searchBy, string? searchString, string sortBy = nameof(ProductResponse.ProductName), SortOrderOptions sortOrder = SortOrderOptions.ASC)
+        public async Task<ActionResult<APIResponse>> GetAllProducts([FromQuery] ProductQueryParameters parameters)
         {
             try
             {
-                List<ProductResponse> products = await _productsGetterService.GetFilteredProduct(searchBy, searchString);
+                
 
-                List<ProductResponse> sortedProducts = _productsSorterService.GetSortedProducts(products, sortBy, sortOrder);
+                List<ProductResponse> filteredproducts = await _productsGetterService.GetFilteredProduct(parameters.SearchBy, parameters.SearchString!,parameters.PageNumber, parameters.PageSize);
+                var sortedProducts = await _cache.GetOrCreateAsync(CacheSettings.ProductsKey(parameters),async () => await _productsSorterService.GetSortedProducts(filteredproducts, parameters.SortBy, parameters.SortOrder), TimeSpan.FromMinutes(10));
+
                 _response.StatusCode = HttpStatusCode.OK;
                 _response.Result = sortedProducts;
                 return Ok(_response);
@@ -53,6 +62,7 @@ namespace AllFoods_API.Controllers.v2
             catch (Exception ex)
             {
                 _response.IsSuccess = false;
+                _response.StatusCode = HttpStatusCode.InternalServerError;
                 _response.ErrorMessages = new List<string>() { ex.ToString() };
             }
 
@@ -105,6 +115,12 @@ namespace AllFoods_API.Controllers.v2
 
         #region CreateProduct
         [HttpPost]
+        [ProducesResponseType(StatusCodes.Status201Created)]
+        [ProducesResponseType(StatusCodes.Status400BadRequest)]
+        [ProducesResponseType(StatusCodes.Status404NotFound)]
+        [ProducesResponseType(StatusCodes.Status403Forbidden)]
+        [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+        [TypeFilter(typeof(HandleExceptionFilter))]
         public async Task<ActionResult<APIResponse>> CreateProduct([FromForm] ProductAddRequest? productAddRequest)
         {
             try
@@ -116,7 +132,6 @@ namespace AllFoods_API.Controllers.v2
                     _response.ErrorMessages = new List<string> { "product that you want to add should not be null" };
                     return BadRequest(_response);
                 }
-
                 ProductResponse? productResponse = await _productsAdderService.AddProduct(productAddRequest);
                 if (productResponse.ProductName is null)
                 {
@@ -125,6 +140,7 @@ namespace AllFoods_API.Controllers.v2
                     _response.ErrorMessages = new List<string> { "product name not found" };
                     return NotFound(_response);
                 }
+                await _cache.InvalidateProductCachesAsync();
                 _response.StatusCode = HttpStatusCode.Created;
                 _response.Result = productResponse;
 
@@ -133,7 +149,9 @@ namespace AllFoods_API.Controllers.v2
             catch (Exception ex)
             {
                 _response.IsSuccess = false;
+                _response.StatusCode = HttpStatusCode.InternalServerError;
                 _response.ErrorMessages = new List<string> { ex.ToString() };
+                return StatusCode((int)HttpStatusCode.InternalServerError,_response);
             }
 
             return _response;
@@ -158,6 +176,7 @@ namespace AllFoods_API.Controllers.v2
                     return BadRequest(_response);
                 }
                 ProductResponse? productResponse = await _productsUpdaterService.UpdateProduct(productUpdateRequest);
+                await _cache.InvalidateProductCachesAsync();
                 _response.Result = productResponse;
                 _response.StatusCode = HttpStatusCode.NoContent;
                 return Ok(_response);
@@ -199,6 +218,7 @@ namespace AllFoods_API.Controllers.v2
                     _response.IsSuccess = false;
                     return NotFound(_response);
                 }
+                await _cache.InvalidateProductCachesAsync();
                 _response.StatusCode = HttpStatusCode.NoContent;
                 return Ok(_response);
             }
@@ -210,6 +230,12 @@ namespace AllFoods_API.Controllers.v2
             return _response;
         }
         #endregion
+        [HttpGet("Error")]
+        [TypeFilter(typeof(HandleExceptionFilter))]
+        public IActionResult Error()
+        {
+            throw new NotFoundException("User not found");
+        }
 
     }
 }

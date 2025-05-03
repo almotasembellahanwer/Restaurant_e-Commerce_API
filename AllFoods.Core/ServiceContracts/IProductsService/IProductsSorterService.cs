@@ -11,6 +11,6 @@ namespace AllFoods.Core.ServiceContracts.IProductsService
 {
     public interface IProductsSorterService
     {
-        List<ProductResponse> GetSortedProducts(List<ProductResponse> allProducts, string sortBy, SortOrderOptions sortOrder);
+        Task<List<ProductResponse>> GetSortedProducts(List<ProductResponse> allProducts, string sortBy, SortOrderOptions sortOrder);
     }
 }
